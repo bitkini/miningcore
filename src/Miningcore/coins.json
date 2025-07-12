@@ -460,6 +460,34 @@
         "explorerTxLink": "https://explorer.bitflate.org/tx/{0}",
         "explorerAccountLink": "https://explorer.bitflate.org/address/{0}"
     },
+    "bitkini": {
+        "name": "Bitkini",
+        "canonicalName": "Bitkini",
+        "symbol": "KINI",
+        "family": "bitcoin",
+        "website": "https://bitkini.lol/",
+        "market": "",
+        "twitter": "https://x.com/0xBitkini",
+        "telegram": "",
+        "discord": "",
+        "coinbaseHasher": {
+        "hash": "sha256d"
+        },
+        "headerHasher": {
+        "hash": "sha256d"
+        },
+        "blockHasher": {
+        "hash": "reverse",
+        "args": [
+            {
+            "hash": "sha256d"
+            }
+        ]
+        },
+        "explorerBlockLink": "https://explorer.bitkini.lol/block/$hash$",
+        "explorerTxLink": "https://explorer.bitkini.lol/tx/{0}",
+        "explorerAccountLink": "https://explorer.bitkini.lol/address/{0}"
+    },
     "bolivarcoin": {
         "name": "Bolivarcoin",
         "canonicalName": "Bolivarcoin",
