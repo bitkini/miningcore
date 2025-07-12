@@ -14,17 +14,18 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-# 2) Clone your fork
-RUN git clone --branch master --depth 1 https://github.com/bitkini/miningcore.git .
+
+# 2) Clone your fork (full history, no --depth)
+RUN git clone --branch master https://github.com/bitkini/miningcore.git .
 
 # 3) Prepare output dir
 RUN mkdir -p /build_output
 
 # 4) Build native libraries (paths under src/Native)
-RUN cd /src/src/Native/libmultihash   && make clean && make && mv libmultihash.so   /build_output/ \
- && cd /src/src/Native/libethhash     && make clean && make && mv libethhash.so       /build_output/ \
- && cd /src/src/Native/libcryptonote  && make clean && make && mv libcryptonote.so  /build_output/ \
- && cd /src/src/Native/libcryptonight && make clean && make && mv libcryptonight.so /build_output/
+RUN cd /src/src/Miningcore/Native/libmultihash   && make clean && make && mv libmultihash.so   /build_output/ \
+ && cd /src/src/Miningcore/Native/libethhash     && make clean && make && mv libethhash.so       /build_output/ \
+ && cd /src/src/Miningcore/Native/libcryptonote  && make clean && make && mv libcryptonote.so  /build_output/ \
+ && cd /src/src/Miningcore/Native/libcryptonight && make clean && make && mv libcryptonight.so /build_output/
 
 # 5) RandomX
 RUN cd /tmp \
@@ -34,8 +35,8 @@ RUN cd /tmp \
  && mkdir build && cd build \
  && cmake -DARCH=native -DBUILD_TESTS=OFF .. \
  && make \
- && cp librandomx.a /src/src/Native/librandomx/ \
- && cd /src/src/Native/librandomx \
+ && cp librandomx.a /src/src/Miningcore/Native/librandomx/ \
+ && cd /src/src/Miningcore/Native/librandomx \
  && make clean && make \
  && mv librandomx.so /build_output/
 
@@ -47,12 +48,12 @@ RUN cd /tmp \
  && mkdir build && cd build \
  && cmake -DARCH=native -DBUILD_TESTS=OFF .. \
  && make \
- && cp librandomx.a /src/src/Native/librandomarq/ \
- && cd /src/src/Native/librandomarq \
+ && cp librandomx.a /src/src/Miningcore/Native/librandomarq/ \
+ && cd /src/src/Miningcore/Native/librandomarq \
  && make clean && make \
  && mv librandomarq.so /build_output/
 
-# 7) Publish .NET app
+# 7) Publish .NET app (GitVersion now works)
 WORKDIR /src/src/Miningcore
 RUN dotnet publish -c Release --framework net6.0 -o /build_output/
 
@@ -62,18 +63,13 @@ RUN dotnet publish -c Release --framework net6.0 -o /build_output/
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-jammy AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1) Runtime dependencies
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       libssl-dev libsodium-dev libzmq5 libzmq3-dev curl \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-# 2) Copy binaries and native libs
 COPY --from=builder /build_output/ ./
 
-# 3) Expose ports
 EXPOSE 4000 4066 4067
-
-# 4) Entrypoint
 ENTRYPOINT ["./Miningcore", "-c", "config.json"]
