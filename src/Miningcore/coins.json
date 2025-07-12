@@ -470,24 +470,30 @@
         "twitter": "https://x.com/0xBitkini",
         "telegram": "",
         "discord": "",
-        "coinbaseHasher": {
-        "hash": "sha256d"
-        },
-        "headerHasher": {
-        "hash": "sha256d"
-        },
+
+        "coinbaseHasher": { "hash": "sha256d" },
+        "headerHasher":   { "hash": "sha256d" },
         "blockHasher": {
         "hash": "reverse",
-        "args": [
-            {
-            "hash": "sha256d"
-            }
-        ]
+        "args": [ { "hash": "sha256d" } ]
         },
-        "explorerBlockLink": "https://explorer.bitkini.lol/block/$hash$",
-        "explorerTxLink": "https://explorer.bitkini.lol/tx/{0}",
+
+        // ——— network parameters ———
+        // mainnet P2P port:
+        "port": 6969,
+        // base58 pubkey-address prefix (45 decimal => 'K')
+        "prefixes": {
+        "pubkey": 45,
+        "script": 45,
+        "secret": 128
+        },
+        // bech32 human-readable part:
+        "bech32Hrp": "kini",
+
+        "explorerBlockLink":   "https://explorer.bitkini.lol/block/$hash$",
+        "explorerTxLink":      "https://explorer.bitkini.lol/tx/{0}",
         "explorerAccountLink": "https://explorer.bitkini.lol/address/{0}"
-    },
+    }
     "bolivarcoin": {
         "name": "Bolivarcoin",
         "canonicalName": "Bolivarcoin",
