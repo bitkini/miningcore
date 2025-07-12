@@ -53,7 +53,7 @@ RUN cd /tmp \
  && make clean && make \
  && mv librandomarq.so /build_output/
 
-# 7) Publish .NET app (GitVersion now works)
+# 7) Publish .NET app
 WORKDIR /src/src/Miningcore
 RUN dotnet publish -c Release --framework net6.0 -o /build_output/
 
@@ -70,6 +70,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+RUN rm -rf coins.json
 
 # 2) Copy build outputs
 COPY --from=builder /build_output/ ./
@@ -77,5 +78,6 @@ COPY --from=builder /build_output/ ./
 # 3) Expose ports
 EXPOSE 4000 4066 4067
 
-# 4) Entrypoint
-ENTRYPOINT ["./Miningcore", "-c", "config.json"]
+# 4) Entrypoint & Default args
+ENTRYPOINT ["./Miningcore"]
+CMD ["-c", "config.json"]
