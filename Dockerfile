@@ -1,40 +1,32 @@
 # ------------------------------------
-# Stage 1: Builder (SDK + native libs)
+# Stage 1: builder
 # ------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:6.0-jammy AS BUILDER
-
-# Prevent apt prompts
+FROM mcr.microsoft.com/dotnet/sdk:6.0-jammy AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install apt deps for both .NET and native builds
+# 1) Install build dependencies
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      git \
-      cmake build-essential clang ninja-build \
+      git cmake build-essential clang ninja-build \
       libssl-dev pkg-config libboost-all-dev \
       libsodium-dev libzmq5 libzmq3-dev \
       golang-go libgmp-dev libc++-dev zlib1g-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Clone your fork (master branch)
 WORKDIR /src
-RUN git clone --branch master --depth 1 \
-      https://github.com/bitkini/miningcore.git .
+# 2) Clone your fork
+RUN git clone --branch master --depth 1 https://github.com/bitkini/miningcore.git .
 
-# Build native libraries into /src/build/
-RUN mkdir -p build
+# 3) Prepare output dir
+RUN mkdir -p /build_output
 
-# libmultihash, libethhash, libcryptonote, libcryptonight
-RUN cd Native/libmultihash   && make clean && make \
- && mv libmultihash.so /src/build/
-RUN cd Native/libethhash     && make clean && make \
- && mv libethhash.so   /src/build/
-RUN cd Native/libcryptonote  && make clean && make \
- && mv libcryptonote.so /src/build/
-RUN cd Native/libcryptonight && make clean && make \
- && mv libcryptonight.so /src/build/
+# 4) Build native libraries (paths under src/Native)
+RUN cd /src/src/Native/libmultihash   && make clean && make && mv libmultihash.so   /build_output/ \
+ && cd /src/src/Native/libethhash     && make clean && make && mv libethhash.so       /build_output/ \
+ && cd /src/src/Native/libcryptonote  && make clean && make && mv libcryptonote.so  /build_output/ \
+ && cd /src/src/Native/libcryptonight && make clean && make && mv libcryptonight.so /build_output/
 
-# RandomX
+# 5) RandomX
 RUN cd /tmp \
  && rm -rf RandomX \
  && git clone https://github.com/tevador/RandomX \
@@ -42,13 +34,12 @@ RUN cd /tmp \
  && mkdir build && cd build \
  && cmake -DARCH=native -DBUILD_TESTS=OFF .. \
  && make \
- && cp librandomx.a /src/Native/librandomx/ \
- && cd /src/Native/librandomx \
+ && cp librandomx.a /src/src/Native/librandomx/ \
+ && cd /src/src/Native/librandomx \
  && make clean && make \
- && mv librandomarq.so /src/build/ || true \
- && mv librandomx.so  /src/build/
+ && mv librandomx.so /build_output/
 
-# RandomARQ
+# 6) RandomARQ
 RUN cd /tmp \
  && rm -rf RandomARQ \
  && git clone https://github.com/arqma/RandomARQ \
@@ -56,37 +47,33 @@ RUN cd /tmp \
  && mkdir build && cd build \
  && cmake -DARCH=native -DBUILD_TESTS=OFF .. \
  && make \
- && cp librandomx.a /src/Native/librandomarq/ \
- && cd /src/Native/librandomarq \
+ && cp librandomx.a /src/src/Native/librandomarq/ \
+ && cd /src/src/Native/librandomarq \
  && make clean && make \
- && mv librandomarq.so /src/build/
+ && mv librandomarq.so /build_output/
 
-# Publish the .NET app into the same build folder
+# 7) Publish .NET app
 WORKDIR /src/src/Miningcore
-RUN dotnet publish -c Release --framework net6.0 -o /src/build/
+RUN dotnet publish -c Release --framework net6.0 -o /build_output/
 
 # ------------------------------------
-# Stage 2: Runtime
+# Stage 2: runtime
 # ------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-jammy AS RUNTIME
-
-# Prevent apt prompts
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-jammy AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Only need runtime deps here
+# 1) Runtime dependencies
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       libssl-dev libsodium-dev libzmq5 libzmq3-dev curl \
  && rm -rf /var/lib/apt/lists/*
 
-# Create app dir
 WORKDIR /app
+# 2) Copy binaries and native libs
+COPY --from=builder /build_output/ ./
 
-# Copy published binaries + native libs
-COPY --from=BUILDER /src/build/            ./
-
-# Expose API & Stratum ports
+# 3) Expose ports
 EXPOSE 4000 4066 4067
 
-# Default args: expects a `config.json` in /app
+# 4) Entrypoint
 ENTRYPOINT ["./Miningcore", "-c", "config.json"]
