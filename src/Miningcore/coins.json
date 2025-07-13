@@ -15,6 +15,7 @@
       "hash": "reverse",
       "args": [ { "hash": "sha256d" } ]
     },
+    "coinbaseMaturity": 1000,
     "port": 6969,
     "prefixes": {
       "pubkey": 45,
