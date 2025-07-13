@@ -63,14 +63,16 @@ RUN dotnet publish -c Release --framework net6.0 -o /build_output/
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-jammy AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1) Runtime deps
+# 1) Runtime deps (also install dos2unix for BOM stripping)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      libssl-dev libsodium-dev libzmq5 libzmq3-dev curl \
+      libssl-dev libsodium-dev libzmq5 libzmq3-dev curl dos2unix \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-RUN rm -rf coins.json
+
+# Strip any BOM from the embedded schema
+RUN dos2unix config.schema.json
 
 # 2) Copy build outputs
 COPY --from=builder /build_output/ ./
