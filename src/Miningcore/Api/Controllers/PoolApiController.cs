@@ -75,7 +75,7 @@ public class PoolApiController : ApiControllerBase
                 {
                     DateTime startTime = lastBlockTime.Value;
                     var poolEffort = await cf.Run(con => shareRepo.GetEffortBetweenCreatedAsync(con, config.Id, pool.ShareMultiplier, startTime, clock.Now));
-                    result.PoolEffort = poolEffort ?? 0;
+                    result.PoolEffort = poolEffort.GetValueOrDefault();
                 }
 
                 var from = clock.Now.AddHours(-topMinersRange);
@@ -143,7 +143,7 @@ public class PoolApiController : ApiControllerBase
         {
             DateTime startTime = lastBlockTime.Value;
             var poolEffort = await cf.Run(con => shareRepo.GetEffortBetweenCreatedAsync(con, pool.Id, poolInstance.ShareMultiplier, startTime, clock.Now));
-            response.Pool.PoolEffort = poolEffort.Value;
+            response.Pool.PoolEffort = poolEffort.GetValueOrDefault();
         }
 
         var from = clock.Now.AddHours(-topMinersRange);
